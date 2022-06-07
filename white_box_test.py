@@ -4,6 +4,7 @@ from torchvision import transforms, datasets
 import torchvision
 import numpy as np
 import os
+import sys
 import random
 import argparse
 
@@ -16,6 +17,9 @@ import torch_dct as dct
 
 import utils as aa
 
+def status(text):
+    sys.stdout.write("\r" + text)
+    sys.stdout.flush()
 
 parser = argparse.ArgumentParser(description='On the Adversarial Robustness of Visual Transformer')
 parser.add_argument('--data_dir', help='path to ImageNet dataset')
@@ -167,10 +171,12 @@ def evaluate(model=None, model_name=None):
 
 def foolbox_attack(filter=None, filter_preserve='low', free_parm='eps', plot_num=None):
     # get model.
+    status("Fetching model...")
     model = get_model()
     model = nn.DataParallel(model).to(device)
     model = model.eval()
 
+    status("Doing some quick stuff...")
     preprocessing = dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3)
     fmodel = PyTorchModel(model, bounds=(0, 1), preprocessing=preprocessing)
 
@@ -190,6 +196,7 @@ def foolbox_attack(filter=None, filter_preserve='low', free_parm='eps', plot_num
     else:
         steps = [args.iteration]
 
+    status("Attacking...")
     for step in steps:
         # Adversarial attack.
         if args.attack_type == 'LinfPGD':
@@ -198,9 +205,9 @@ def foolbox_attack(filter=None, filter_preserve='low', free_parm='eps', plot_num
             attack = FGSM()
 
         clean_acc = 0.0
-
+        total_points = len(val_loader)
         for i, data in enumerate(val_loader, 0):
-
+            status(f'Attacking... {i}/{total_points}')
             # Samples (attack_batch_size * attack_epochs) images for adversarial attack.
             if i >= args.attack_epochs:
                 break
