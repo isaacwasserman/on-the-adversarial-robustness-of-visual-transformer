@@ -211,18 +211,24 @@ def foolbox_attack(filter=None, filter_preserve='low', free_parm='eps', plot_num
             # Samples (attack_batch_size * attack_epochs) images for adversarial attack.
             if i >= args.attack_epochs:
                 break
-
+            
             images, labels = data[0].to(device), data[1].to(device)
             if step == steps[0]:
                 clean_acc += (get_acc(fmodel, images, labels)) / args.attack_epochs  # accumulate for attack epochs.
 
+            status(f'Attacking... {i}/{total_points}\nHere 1')
+
             _images, _labels = ep.astensors(images, labels)
             raw_advs, clipped_advs, success = attack(fmodel, _images, _labels, epsilons=epsilons)
+
+            status(f'Attacking... {i}/{total_points}\nHere 2')
 
             if plot_num:
                 grad = torch.from_numpy(raw_advs[0].numpy()).to(device) - images
                 grad = grad.clone().detach_()
                 return grad
+
+            status(f'Attacking... {i}/{total_points}\nHere 3')
 
             if filter:
                 robust_accuracy = torch.empty(len(epsilons))
